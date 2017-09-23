@@ -36,15 +36,18 @@ namespace sql2csv
 			var global = Stopwatch.StartNew();
 
 			var status = new CancellationTokenSource();
-			Task.Run(() =>
+			if (Environment.UserInteractive)
 			{
-				Console.WriteLine("Read -> Process -> Write");
-				while (!status.IsCancellationRequested)
+				Task.Run(() =>
 				{
-					Console.Write($"{InputRows:N0} -> {ProccessedRows:N0} -> {OutputRows:N0} in {global.Elapsed}\r");
-					Thread.Sleep(200);
-				}
-			}, status.Token);
+					Console.WriteLine("Read -> Process -> Write");
+					while (!status.IsCancellationRequested)
+					{
+						Console.Write($"{InputRows:N0} -> {ProccessedRows:N0} -> {OutputRows:N0} in {global.Elapsed}\r");
+						Thread.Sleep(200);
+					}
+				}, status.Token);
+			}
 
 			var read = Task.Run(() =>
 			{
@@ -80,7 +83,7 @@ namespace sql2csv
 				Parallel.ForEach(InputQueue.GetConsumingEnumerable(), ParallelOptions, values =>
 				{
 					OutputQueue.Add(
-						string.Join(",", values.Select(val => "\"" + Regex.Replace(Regex.Replace((val ?? "").ToString().Trim(), "\\s+", " "), "\"", "\\\"") + "\""))
+						string.Join(",", values.Select(val => "\"" + Regex.Replace(Regex.Replace((val ?? "").ToString().Trim(), "\\s+", " "), "\"", "\"\"") + "\""))
 						, status.Token);
 					Interlocked.Increment(ref ProccessedRows);
 				});
@@ -122,7 +125,7 @@ namespace sql2csv
 			var output = options.GetOrDefault("output", "");
 			var server = options.GetOrDefault("server", "localhost");
 			var database = options.GetOrDefault("database", "RabotaUA2");
-			var username = options.GetOrDefault("username", "");
+			var username = options.GetOrDefault("username", "sa");
 			var password = options.GetOrDefault("password", "");
 
 			var hasValidInput = !string.IsNullOrEmpty(query) || !string.IsNullOrEmpty(input) && File.Exists(input);
@@ -145,7 +148,7 @@ namespace sql2csv
 				PersistSecurityInfo = true
 			};
 
-			if (string.IsNullOrEmpty(username) && string.IsNullOrEmpty(password))
+			if (string.IsNullOrEmpty(password))
 			{
 				builder.IntegratedSecurity = true;
 			}
