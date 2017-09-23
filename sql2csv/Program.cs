@@ -4,6 +4,7 @@ using System.Data.SqlClient;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,7 +13,7 @@ namespace sql2csv
 {
 	public class Program
 	{
-		public static ParallelOptions ParallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount / 2 };
+		public static ParallelOptions ParallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Math.Min(Environment.ProcessorCount / 2, 4) };
 		protected static readonly BlockingCollection<object[]> InputQueue = new BlockingCollection<object[]>();
 		protected static readonly BlockingCollection<string> OutputQueue = new BlockingCollection<string>();
 		public static long InputRows;
@@ -90,7 +91,7 @@ namespace sql2csv
 			var write = Task.Run(() =>
 			{
 				var timer = Stopwatch.StartNew();
-				using (var writer = new StreamWriter(output))
+				using (var writer = new StreamWriter(output, false, new UTF8Encoding(false)) { NewLine = "\n" })
 				{
 					foreach (var row in OutputQueue.GetConsumingEnumerable())
 					{
