@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.IO;
@@ -9,7 +10,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web;
 
 namespace sql2csv
 {
@@ -26,6 +26,7 @@ namespace sql2csv
 		public static TimeSpan OutputTime;
 
 
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
 		public static int Main(string[] args)
 		{
 			var (query, output, connectionString) = ParseArgs(args);
@@ -76,7 +77,6 @@ namespace sql2csv
 									Interlocked.Increment(ref InputRows);
 								}
 							}
-							reader.Close();
 						}
 					}
 				}
@@ -92,10 +92,14 @@ namespace sql2csv
 					var cells = values.Select(val =>
 					{
 						var str = (val ?? "").ToString().Trim();
-						//str = HttpUtility.UrlDecode(str);
-						str = Regex.Replace(str, @"[\u0000-\u001F]", string.Empty);
-						str = Regex.Replace(str, "\\s+", " ");
-						str = Regex.Replace(str, "\"", "\"\"");
+
+						if (val is string)
+						{
+							//str = HttpUtility.UrlDecode(str);
+							str = Regex.Replace(str, @"[\u0000-\u001F]", string.Empty);
+							str = Regex.Replace(str, "\\s+", " ");
+							str = Regex.Replace(str, "\"", "\"\"");
+						}
 
 						return "\"" + str + "\"";
 					});
@@ -176,25 +180,24 @@ namespace sql2csv
 			return (query, output, builder.ConnectionString);
 		}
 
-		private static void PrintHelpMessage()
-		{
-			Console.WriteLine($"SQL2CSV Version: {Assembly.GetExecutingAssembly().GetName().Version}");
-			Console.WriteLine("Required arguments:");
-			Console.WriteLine();
-			Console.WriteLine("  --query=\"select top 10 * from city\" - required if there is no input argument");
-			Console.WriteLine("  --input=query.sql - required if there is no query argument");
-			Console.WriteLine("  --output=city.csv");
-			Console.WriteLine();
-			Console.WriteLine("Optional arguments:");
-			Console.WriteLine("  --server=localhost");
-			Console.WriteLine("  --database=RabotaUA2");
-			Console.WriteLine("  --username=sa");
-			Console.WriteLine("  --password=password");
-			Console.WriteLine();
-			Console.WriteLine("Usage examples:");
-			Console.WriteLine();
-			Console.WriteLine("sql2csv --query=\"select top 10 * from city\" --output=city.csv");
-			Console.WriteLine();
-		}
+		private static void PrintHelpMessage() => Console.WriteLine($@"
+SQL2CSV Version: {Assembly.GetExecutingAssembly().GetName().Version}
+
+Required arguments:
+
+  --query=""select top 10 * from city"" - required if there is no input argument
+  --input=query.sql - required if there is no query argument
+  --output=city.csv
+
+Optional arguments:
+
+  --server=localhost
+  --database=RabotaUA2
+  --password=password
+
+Usage examples:
+
+sql2csv --query=""select top 10 * from city"" --output=city.csv
+");
 	}
 }
