@@ -18,6 +18,10 @@ namespace sql2csv
 		public static long InputRows;
 		public static long ProccessedRows;
 		public static long OutputRows;
+		public static TimeSpan InputTime;
+		public static TimeSpan ProcessTime;
+		public static TimeSpan OutputTime;
+
 
 		public static int Main(string[] args)
 		{
@@ -34,7 +38,7 @@ namespace sql2csv
 			Task.Run(() =>
 			{
 				Console.WriteLine("Read -> Process -> Write");
-				while (true)
+				while (!status.IsCancellationRequested)
 				{
 					Console.Write($"{InputRows:N0} -> {ProccessedRows:N0} -> {OutputRows:N0} in {global.Elapsed}\r");
 					Thread.Sleep(200);
@@ -57,12 +61,8 @@ namespace sql2csv
 								{
 									var values = new object[reader.FieldCount];
 									reader.GetValues(values);
-									InputQueue.Add(values);
+									InputQueue.Add(values, status.Token);
 									Interlocked.Increment(ref InputRows);
-									/*if (InputRows % 1000 == 0)
-									{
-										Console.Write($"{InputRows:N0} in {timer.Elapsed}\r");
-									}*/
 								}
 							}
 							reader.Close();
@@ -70,9 +70,8 @@ namespace sql2csv
 					}
 				}
 				InputQueue.CompleteAdding();
-				Console.WriteLine();
-				Console.WriteLine($"Got {InputRows:N0} rows from database in {timer.Elapsed}");
-			});
+				InputTime = timer.Elapsed;
+			}, status.Token);
 
 			var process = Task.Run(() =>
 			{
@@ -81,12 +80,12 @@ namespace sql2csv
 				{
 					OutputQueue.Add(
 						string.Join(",", values.Select(val => "\"" + Regex.Replace(Regex.Replace((val ?? "").ToString().Trim(), "\\s+", " "), "\"", "\\\"") + "\""))
-					);
+						, status.Token);
 					Interlocked.Increment(ref ProccessedRows);
 				});
 				OutputQueue.CompleteAdding();
-				Console.WriteLine($"Proccessed {ProccessedRows:N0} rows in {timer.Elapsed}");
-			});
+				ProcessTime = timer.Elapsed;
+			}, status.Token);
 
 			var write = Task.Run(() =>
 			{
@@ -99,12 +98,15 @@ namespace sql2csv
 						Interlocked.Increment(ref OutputRows);
 					}
 				}
-				Console.WriteLine($"Done writing {OutputRows:N0} in {timer.Elapsed}");
-			});
+				OutputTime = timer.Elapsed;
+			}, status.Token);
 
 			Task.WaitAll(read, process, write);
 			status.Cancel();
 			Console.WriteLine();
+			Console.WriteLine($"{InputRows:N0} input in {InputTime}");
+			Console.WriteLine($"{ProccessedRows:N0} input in {ProcessTime}");
+			Console.WriteLine($"{OutputRows:N0} input in {OutputTime}");
 			Console.WriteLine($"Done in {global.Elapsed}");
 
 			return 0;
