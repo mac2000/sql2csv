@@ -61,3 +61,5 @@ sql2csv.exe --query="SELECT ID, VacancyApplyID, convert(varchar, AddDate, 120), 
 2 382 135 write in 00:00:11.5530416
 Done in 00:00:11.5554066
 ```
+
+Unfortunately we do not have managements object installed on server so can not compare with PowerShells Invoke-SqlCmd but bet it will be way to slower
