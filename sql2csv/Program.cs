@@ -129,9 +129,9 @@ namespace sql2csv
 			Task.WaitAll(read, process, write);
 			status.Cancel();
 			Console.WriteLine();
-			Console.WriteLine($"{InputRows:N0} input in {InputTime}");
-			Console.WriteLine($"{ProccessedRows:N0} input in {ProcessTime}");
-			Console.WriteLine($"{OutputRows:N0} input in {OutputTime}");
+			Console.WriteLine($"{InputRows:N0} read in {InputTime}");
+			Console.WriteLine($"{ProccessedRows:N0} process in {ProcessTime}");
+			Console.WriteLine($"{OutputRows:N0} write in {OutputTime}");
 			Console.WriteLine($"Done in {global.Elapsed}");
 
 			return 0;
