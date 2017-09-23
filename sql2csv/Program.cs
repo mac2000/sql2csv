@@ -4,6 +4,7 @@ using System.Data.SqlClient;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -163,6 +164,7 @@ namespace sql2csv
 
 		private static void PrintHelpMessage()
 		{
+			Console.WriteLine($"SQL2CSV Version: {Assembly.GetExecutingAssembly().GetName().Version}");
 			Console.WriteLine("Required arguments:");
 			Console.WriteLine();
 			Console.WriteLine("  --query=\"select top 10 * from city\" - required if there is no input argument");
