@@ -9,6 +9,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace sql2csv
 {
@@ -28,6 +29,11 @@ namespace sql2csv
 		public static int Main(string[] args)
 		{
 			var (query, output, connectionString) = ParseArgs(args);
+#if DEBUG
+			query = "SELECT EMail, Domain, cast(IsConfirmed as smallint), convert(varchar, AddDate, 120), cast(IsSend_System_JobRecommendation as smallint), cast(IsNeedConfirm_UkrNet as smallint) FROM EMailSource with (nolock) where email like '11malushka11@mail.ru74%'";
+			output = "emailsource.csv";
+			connectionString = "Data Source=beta.rabota.ua;Initial Catalog=RabotaUA2;Integrated Security=False;User ID=sa;Password=rabota;";
+#endif
 			if (string.IsNullOrEmpty(query) || string.IsNullOrEmpty(output) || string.IsNullOrEmpty(connectionString))
 			{
 				PrintHelpMessage();
@@ -83,9 +89,17 @@ namespace sql2csv
 				var timer = Stopwatch.StartNew();
 				Parallel.ForEach(InputQueue.GetConsumingEnumerable(), ParallelOptions, values =>
 				{
-					OutputQueue.Add(
-						string.Join(",", values.Select(val => "\"" + Regex.Replace(Regex.Replace((val ?? "").ToString().Trim(), "\\s+", " "), "\"", "\"\"") + "\""))
-						, status.Token);
+					var cells = values.Select(val =>
+					{
+						var str = (val ?? "").ToString().Trim();
+						str = HttpUtility.UrlDecode(str);
+						str = Regex.Replace(str, @"[\u0000-\u001F]", string.Empty);
+						str = Regex.Replace(str, "\\s+", " ");
+						str = Regex.Replace(str, "\"", "\"\"");
+
+						return "\"" + str + "\"";
+					});
+					OutputQueue.Add(string.Join(",", cells), status.Token);
 					Interlocked.Increment(ref ProccessedRows);
 				});
 				OutputQueue.CompleteAdding();
