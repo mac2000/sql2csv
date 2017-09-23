@@ -92,7 +92,7 @@ namespace sql2csv
 					var cells = values.Select(val =>
 					{
 						var str = (val ?? "").ToString().Trim();
-						str = HttpUtility.UrlDecode(str);
+						//str = HttpUtility.UrlDecode(str);
 						str = Regex.Replace(str, @"[\u0000-\u001F]", string.Empty);
 						str = Regex.Replace(str, "\\s+", " ");
 						str = Regex.Replace(str, "\"", "\"\"");
