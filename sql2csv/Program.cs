@@ -31,7 +31,7 @@ namespace sql2csv
 		{
 			var (query, output, connectionString) = ParseArgs(args);
 #if DEBUG
-			query = "SELECT EMail, Domain, cast(IsConfirmed as smallint), convert(varchar, AddDate, 120), cast(IsSend_System_JobRecommendation as smallint), cast(IsNeedConfirm_UkrNet as smallint) FROM EMailSource with (nolock) where email like '11malushka11@mail.ru74%'";
+			query = "SELECT top 1000 EMail, Domain, cast(IsConfirmed as smallint), convert(varchar, AddDate, 120), cast(IsSend_System_JobRecommendation as smallint), cast(IsNeedConfirm_UkrNet as smallint) FROM EMailSource with (nolock)";
 			output = "emailsource.csv";
 			connectionString = "Data Source=beta.rabota.ua;Initial Catalog=RabotaUA2;Integrated Security=False;User ID=sa;Password=rabota;";
 #endif
@@ -89,21 +89,23 @@ namespace sql2csv
 				var timer = Stopwatch.StartNew();
 				Parallel.ForEach(InputQueue.GetConsumingEnumerable(), ParallelOptions, values =>
 				{
-					var cells = values.Select(val =>
+					var sb = new StringBuilder();
+					for (var i = 0; i < values.Length; i++)
 					{
-						var str = (val ?? "").ToString().Trim();
+						var str = (values[i] ?? "").ToString().Trim();
 
-						if (val is string)
+						if (values[i] is string)
 						{
 							//str = HttpUtility.UrlDecode(str);
 							str = Regex.Replace(str, @"[\u0000-\u001F]", string.Empty);
 							str = Regex.Replace(str, "\\s+", " ");
-							str = Regex.Replace(str, "\"", "\"\"");
+							str = str.Replace("\"", "\"\"");
 						}
 
-						return "\"" + str + "\"";
-					});
-					OutputQueue.Add(string.Join(",", cells), status.Token);
+						sb.AppendFormat("{0}\"{1}\"", i > 0 ? "," : "", str);
+					}
+
+					OutputQueue.Add(sb.ToString(), status.Token);
 					Interlocked.Increment(ref ProccessedRows);
 				});
 				OutputQueue.CompleteAdding();
