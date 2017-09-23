@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.IO;
@@ -14,8 +13,10 @@ namespace sql2csv
 	public class Program
 	{
 		public static ParallelOptions ParallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount / 2 };
-		protected static readonly BlockingCollection<string> Queue = new BlockingCollection<string>();
+		protected static readonly BlockingCollection<object[]> InputQueue = new BlockingCollection<object[]>();
+		protected static readonly BlockingCollection<string> OutputQueue = new BlockingCollection<string>();
 		public static long InputRows;
+		public static long ProccessedRows;
 		public static long OutputRows;
 
 		public static int Main(string[] args)
@@ -28,6 +29,17 @@ namespace sql2csv
 			}
 
 			var global = Stopwatch.StartNew();
+
+			var status = new CancellationTokenSource();
+			Task.Run(() =>
+			{
+				Console.WriteLine("Read -> Process -> Write");
+				while (true)
+				{
+					Console.Write($"{InputRows:N0} -> {ProccessedRows:N0} -> {OutputRows:N0} in {global.Elapsed}\r");
+					Thread.Sleep(200);
+				}
+			}, status.Token);
 
 			var read = Task.Run(() =>
 			{
@@ -43,27 +55,37 @@ namespace sql2csv
 							{
 								while (reader.Read())
 								{
-									var list = new List<string>();
-									for (var i = 0; i < reader.FieldCount; i++)
-									{
-										var val = Regex.Replace(Regex.Replace((reader[i] ?? "").ToString().Trim(), "\\s+", " "), "\"", "\\\"");
-										list.Add("\"" + val + "\"");
-									}
-									Queue.Add(string.Join(",", list));
+									var values = new object[reader.FieldCount];
+									reader.GetValues(values);
+									InputQueue.Add(values);
 									Interlocked.Increment(ref InputRows);
-									if (InputRows % 1000 == 0)
+									/*if (InputRows % 1000 == 0)
 									{
 										Console.Write($"{InputRows:N0} in {timer.Elapsed}\r");
-									}
+									}*/
 								}
 							}
 							reader.Close();
 						}
 					}
 				}
-				Queue.CompleteAdding();
+				InputQueue.CompleteAdding();
 				Console.WriteLine();
 				Console.WriteLine($"Got {InputRows:N0} rows from database in {timer.Elapsed}");
+			});
+
+			var process = Task.Run(() =>
+			{
+				var timer = Stopwatch.StartNew();
+				Parallel.ForEach(InputQueue.GetConsumingEnumerable(), ParallelOptions, values =>
+				{
+					OutputQueue.Add(
+						string.Join(",", values.Select(val => "\"" + Regex.Replace(Regex.Replace((val ?? "").ToString().Trim(), "\\s+", " "), "\"", "\\\"") + "\""))
+					);
+					Interlocked.Increment(ref ProccessedRows);
+				});
+				OutputQueue.CompleteAdding();
+				Console.WriteLine($"Proccessed {ProccessedRows:N0} rows in {timer.Elapsed}");
 			});
 
 			var write = Task.Run(() =>
@@ -71,7 +93,7 @@ namespace sql2csv
 				var timer = Stopwatch.StartNew();
 				using (var writer = new StreamWriter(output))
 				{
-					foreach (var row in Queue.GetConsumingEnumerable())
+					foreach (var row in OutputQueue.GetConsumingEnumerable())
 					{
 						writer.WriteLine(row);
 						Interlocked.Increment(ref OutputRows);
@@ -80,7 +102,9 @@ namespace sql2csv
 				Console.WriteLine($"Done writing {OutputRows:N0} in {timer.Elapsed}");
 			});
 
-			Task.WaitAll(read, write);
+			Task.WaitAll(read, process, write);
+			status.Cancel();
+			Console.WriteLine();
 			Console.WriteLine($"Done in {global.Elapsed}");
 
 			return 0;
