@@ -31,7 +31,12 @@ namespace sql2csv
 		{
 			var (query, output, connectionString) = ParseArgs(args);
 #if DEBUG
-			query = "SELECT top 1000 EMail, Domain, cast(IsConfirmed as smallint), convert(varchar, AddDate, 120), cast(IsSend_System_JobRecommendation as smallint), cast(IsNeedConfirm_UkrNet as smallint) FROM EMailSource with (nolock)";
+			query = @"SELECT top 1000 
+			EMail, Domain, cast(IsConfirmed as smallint) as IsConfirmed, 
+			convert(varchar, AddDate, 120) as AddDate, 
+			cast(IsSend_System_JobRecommendation as smallint) as IsSend_System_JobRecommendation, 
+			cast(IsNeedConfirm_UkrNet as smallint) as IsNeedConfirm_UkrNet 
+			FROM EMailSource with (nolock)";
 			output = "emailsource.csv";
 			connectionString = "Data Source=beta.rabota.ua;Initial Catalog=RabotaUA2;Integrated Security=False;User ID=sa;Password=rabota;";
 #endif
@@ -69,6 +74,11 @@ namespace sql2csv
 						{
 							if (reader.HasRows)
 							{
+								var columns = new List<string>();
+								for (var i = 0; i < reader.FieldCount; i++)
+									columns.Add(reader.GetName(i));
+								InputQueue.Add(columns.ToArray(), status.Token);
+
 								while (reader.Read())
 								{
 									var values = new object[reader.FieldCount];
