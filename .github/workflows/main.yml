@@ -4,13 +4,10 @@ on: [push]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-    
+
     steps:
-    - uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 3.0.100
-    - run: dotnet public -c Release -r osx-x64
-
-
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.0.100
+      - run: dotnet publish -c Release -r osx-x64
