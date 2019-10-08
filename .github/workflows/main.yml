@@ -16,3 +16,12 @@ jobs:
         with:
           dotnet-version: 3.0.100
       - run: dotnet publish -c Release -r osx-x64
+  win:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.0.100
+      - run: dotnet publish -c Release -r win-x64
+# sql2csv -> /Users/runner/runners/2.158.0/work/sql2csv/sql2csv/bin/Release/netcoreapp3.0/osx-x64/publish/
