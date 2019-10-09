@@ -60,9 +60,9 @@ Clock Time (ms.) Total     : 5600   Average : (425380.00 rows per sec.)
 
 ```
 sql2csv.exe --query="SELECT ID, VacancyApplyID, convert(varchar, AddDate, 120), FileName, CheckSum, FileSize FROM VacancyApplyCVs with (nolock)" --output=vacancyapplycvs.csv
-2�382�135 read in 00:00:06.9164592
-2�382�135 process in 00:00:11.5524886
-2�382�135 write in 00:00:11.5530416
+2->382->135 read in 00:00:06.9164592
+2->382->135 process in 00:00:11.5524886
+2->382->135 write in 00:00:11.5530416
 Done in 00:00:11.5554066
 ```
 
