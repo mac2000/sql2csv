@@ -2,29 +2,12 @@ name: CI
 
 on: [push]
 
-# on:
-#   push:
-#     branches:
-#       - master
-
 jobs:
-  osx:
-    runs-on: macOS-latest
+  build:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
       - uses: actions/setup-dotnet@v1
         with:
           dotnet-version: 3.0.100
-      - run: dotnet publish -c Release -r osx-x64
-      - run: ls -lah bin/Release/netcoreapp3.0/osx-x64/publish/
-  win:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@master
-      - uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: 3.0.100
-      - run: dotnet publish -c Release -r win-x64
-      - run: ls -lah bin/Release/netcoreapp3.0/win-x64/publish/
-# sql2csv -> /Users/runner/runners/2.158.0/work/sql2csv/sql2csv/bin/Release/netcoreapp3.0/osx-x64/publish/
-# sql2csv -> d:\a\sql2csv\sql2csv\bin\Release\netcoreapp3.0\win-x64\publish\
+      - run: dotnet publish -c Release -r linux-x64
