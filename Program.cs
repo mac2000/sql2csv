@@ -161,9 +161,11 @@ namespace sql2csv
 
             var builder = new SqlConnectionStringBuilder
             {
+                ApplicationName = "sql2csv",
                 DataSource = server,
                 InitialCatalog = database,
-                PersistSecurityInfo = true
+                PersistSecurityInfo = true,
+                ConnectTimeout = 5
             };
 
             if (string.IsNullOrEmpty(password))
