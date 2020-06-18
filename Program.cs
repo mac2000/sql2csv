@@ -31,6 +31,8 @@ namespace sql2csv
             query = "SELECT top 1000 EMail, Domain, cast(IsConfirmed as smallint), convert(varchar, AddDate, 120), cast(IsSend_System_JobRecommendation as smallint), cast(IsNeedConfirm_UkrNet as smallint) FROM EMailSource with (nolock)";
             output = "emailsource.csv";
             connectionString = "Data Source=beta.rabota.ua;Initial Catalog=RabotaUA2;Integrated Security=False;User ID=sa;Password=rabota;";
+
+            query = "select top 100 id from SubscribeCompetitor with(nolock) where isactive=1";
 #endif
             if (string.IsNullOrEmpty(query) || string.IsNullOrEmpty(output) || string.IsNullOrEmpty(connectionString))
             {
@@ -39,6 +41,26 @@ namespace sql2csv
             }
 
             var global = Stopwatch.StartNew();
+
+            try
+            {
+                using var connection = new SqlConnection(connectionString);
+                connection.Open();
+                using var noExecCommand = new SqlCommand("SET NOEXEC ON", connection);
+                noExecCommand.ExecuteNonQuery();
+                using var queryCommand = new SqlCommand(query, connection);
+                queryCommand.ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine(ex.InnerException.Message);
+                }
+
+                return 1;
+            }
 
             var status = new CancellationTokenSource();
             if (Environment.UserInteractive)
@@ -89,7 +111,7 @@ namespace sql2csv
                     var sb = new StringBuilder();
                     for (var i = 0; i < values.Length; i++)
                     {
-                        var str = (values[i] ?? "").ToString().Trim();
+                        var str = (values[i] ?? "").ToString()?.Trim();
 
                         if (values[i] is string)
                         {
