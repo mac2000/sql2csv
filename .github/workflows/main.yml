@@ -20,7 +20,7 @@ jobs:
           - os: macos-latest
             runtime: osx-x64
             artifact: sql2csv
-          - os: windows-lates
+          - os: windows-latest
             runtime: win-x64
             artifact: sql2csv.exe
     runs-on: ${{ matrix.os }}
