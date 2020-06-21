@@ -6,8 +6,8 @@ You gonna need it only if you are going to export big amounts of data. Otherwise
 
 This tool is used in conjunction with `bq load` to import data into BigQuery, e.g.:
 
-```
-sql2csv.exe --query="SELECT NotebookID, Name, Surname, convert(varchar, AddDate, 120), HeadquarterCityID AS CityID FROM NotebookEmployee with (nolock)" --output=notebookemployee.csv
+```bash
+sql2csv --query="SELECT NotebookID, Name, Surname, convert(varchar, AddDate, 120), HeadquarterCityID AS CityID FROM NotebookEmployee with (nolock)" --output=notebookemployee.csv
 bq load --replace=true db.notebookemployee notebookemployee.csv "NotebookID:INTEGER,Name:STRING,Surname:STRING,AddDate:DATETIME,CityID:INTEGER"
 ```
 
@@ -40,7 +40,7 @@ sql2csv --query="SELECT * FROM NotebookEmployee with (nolock)" --output=notebook
 ## Build
 
 ```bash
-dotnet publish -c Release -r osx-x64
+dotnet publish -c Release -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained true -r osx-x64
 dotnet publish -c Release -r win-x64
 dotnet publish -c Release -r linux-x64
 ```
