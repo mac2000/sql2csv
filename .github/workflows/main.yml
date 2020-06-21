@@ -21,8 +21,12 @@ jobs:
         uses: docker://github/super-linter:v2.1.1
       - name: build
         uses: actions/setup-dotnet@v1
+        if: matrix.os == 'ubuntu-latest'
         with:
           dotnet-version: 3.1.x
+      - name: build2
+        run: brew install dotnet
+        if: matrix.os == 'macos-latest'
 
       - name: publish
         run: dotnet publish -c Release -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained true -r ${{ matrix.runtime }}
