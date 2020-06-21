@@ -14,26 +14,25 @@ namespace sql2csv
 {
     public static class Program
     {
-        public static ParallelOptions ParallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Math.Min(Environment.ProcessorCount / 2, 4) };
+        private static readonly ParallelOptions ParallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Math.Min(Environment.ProcessorCount / 2, 4) };
         private static readonly BlockingCollection<object[]> InputQueue = new BlockingCollection<object[]>();
         private static readonly BlockingCollection<string> OutputQueue = new BlockingCollection<string>();
-        public static long InputRows;
-        public static long ProccessedRows;
-        public static long OutputRows;
-        public static TimeSpan InputTime;
-        public static TimeSpan ProcessTime;
-        public static TimeSpan OutputTime;
+        private static long InputRows;
+        private static long ProcessedRows;
+        private static long OutputRows;
+        private static TimeSpan InputTime;
+        private static TimeSpan ProcessTime;
+        private static TimeSpan OutputTime;
 
         public static int Main(string[] args)
         {
             var (query, output, connectionString) = ParseArgs(args);
 #if DEBUG
             query = "SELECT top 1000 EMail, Domain, cast(IsConfirmed as smallint), convert(varchar, AddDate, 120), cast(IsSend_System_JobRecommendation as smallint), cast(IsNeedConfirm_UkrNet as smallint) FROM EMailSource with (nolock)";
-            output = "emailsource.csv";
+            output = "demo.csv";
             connectionString = "Data Source=beta.rabota.ua;Initial Catalog=RabotaUA2;Integrated Security=False;User ID=sa;Password=rabota;";
-
-            query = "select top 100 id from SubscribeCompetitor with(nolock) where isactive=1";
 #endif
+            
             if (string.IsNullOrEmpty(query) || string.IsNullOrEmpty(output) || string.IsNullOrEmpty(connectionString))
             {
                 PrintHelpMessage();
@@ -53,12 +52,8 @@ namespace sql2csv
             }
             catch (Exception ex)
             {
+                Console.WriteLine("There was error while validating query:");
                 Console.WriteLine(ex.Message);
-                if (ex.InnerException != null)
-                {
-                    Console.WriteLine(ex.InnerException.Message);
-                }
-
                 return 1;
             }
 
@@ -70,7 +65,7 @@ namespace sql2csv
                     Console.WriteLine("Read -> Process -> Write");
                     while (!status.IsCancellationRequested)
                     {
-                        Console.Write($"{InputRows:N0} -> {ProccessedRows:N0} -> {OutputRows:N0} in {global.Elapsed}\r");
+                        Console.Write($"{InputRows:N0} -> {ProcessedRows:N0} -> {OutputRows:N0} in {global.Elapsed}\r");
                         Thread.Sleep(200);
                     }
                 }, status.Token);
@@ -79,26 +74,21 @@ namespace sql2csv
             var read = Task.Run(() =>
             {
                 var timer = Stopwatch.StartNew();
-                using (var connection = new SqlConnection(connectionString))
+                using var connection = new SqlConnection(connectionString);
+                using var command = new SqlCommand(query, connection) { CommandTimeout = 0 };
+                connection.Open();
+                using var reader = command.ExecuteReader();
+                if (reader.HasRows)
                 {
-                    using (var command = new SqlCommand(query, connection) { CommandTimeout = 0 })
+                    while (reader.Read())
                     {
-                        connection.Open();
-                        using (var reader = command.ExecuteReader())
-                        {
-                            if (reader.HasRows)
-                            {
-                                while (reader.Read())
-                                {
-                                    var values = new object[reader.FieldCount];
-                                    reader.GetValues(values);
-                                    InputQueue.Add(values, status.Token);
-                                    Interlocked.Increment(ref InputRows);
-                                }
-                            }
-                        }
+                        var values = new object[reader.FieldCount];
+                        reader.GetValues(values);
+                        InputQueue.Add(values, status.Token);
+                        Interlocked.Increment(ref InputRows);
                     }
                 }
+
                 InputQueue.CompleteAdding();
                 InputTime = timer.Elapsed;
             }, status.Token);
@@ -125,7 +115,7 @@ namespace sql2csv
                     }
 
                     OutputQueue.Add(sb.ToString(), status.Token);
-                    Interlocked.Increment(ref ProccessedRows);
+                    Interlocked.Increment(ref ProcessedRows);
                 });
                 OutputQueue.CompleteAdding();
                 ProcessTime = timer.Elapsed;
@@ -134,14 +124,13 @@ namespace sql2csv
             var write = Task.Run(() =>
             {
                 var timer = Stopwatch.StartNew();
-                using (var writer = new StreamWriter(output, false, new UTF8Encoding(false)) { NewLine = "\n" })
+                using var writer = new StreamWriter(output, false, new UTF8Encoding(false)) { NewLine = "\n" };
+                foreach (var row in OutputQueue.GetConsumingEnumerable())
                 {
-                    foreach (var row in OutputQueue.GetConsumingEnumerable())
-                    {
-                        writer.WriteLine(row);
-                        Interlocked.Increment(ref OutputRows);
-                    }
+                    writer.WriteLine(row);
+                    Interlocked.Increment(ref OutputRows);
                 }
+
                 OutputTime = timer.Elapsed;
             }, status.Token);
 
@@ -149,7 +138,7 @@ namespace sql2csv
             status.Cancel();
             Console.WriteLine();
             Console.WriteLine($"{InputRows:N0} read in {InputTime}");
-            Console.WriteLine($"{ProccessedRows:N0} process in {ProcessTime}");
+            Console.WriteLine($"{ProcessedRows:N0} process in {ProcessTime}");
             Console.WriteLine($"{OutputRows:N0} write in {OutputTime}");
             Console.WriteLine($"Done in {global.Elapsed}");
 

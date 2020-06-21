@@ -6,8 +6,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
-      - uses: actions/setup-dotnet@v1
+      - name: checkout
+        uses: actions/checkout@master
+      - name: lint
+        uses: docker://github/super-linter:v2.1.1
+      - name: build
+        uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: 3.0.100
+          dotnet-version: 3.1.x
       - run: dotnet publish -c Release -r linux-x64
