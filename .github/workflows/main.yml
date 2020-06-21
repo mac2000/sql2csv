@@ -24,9 +24,6 @@ jobs:
         with:
           dotnet-version: 3.1.x
 
-      - name: log
-        run: "echo os: ${{ matrix.os }}, runtime: ${{ matrix.runtime }}"
-
       - name: publish
         run: dotnet publish -c Release -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained true -r ${{ matrix.runtime }}
       # - name: upload
