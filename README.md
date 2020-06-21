@@ -41,9 +41,13 @@ sql2csv --query="SELECT * FROM NotebookEmployee with (nolock)" --output=notebook
 
 ```bash
 dotnet publish -c Release -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained true -r osx-x64
-dotnet publish -c Release -r win-x64
-dotnet publish -c Release -r linux-x64
+
+dotnet publish -c Release -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained true -r win-x64
+
+dotnet publish -c Release -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained true -r linux-x64
 ```
+
+Note: `PublishReadyToRun` is available only when you building project on a target platform
 
 ## Performance
 
