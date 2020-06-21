@@ -8,11 +8,11 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            rt: linux-x64
+            runtime: linux-x64
           - os: macos-latest
-            rt: osx-x64
-          - os: windows-lates
-            rt: win-x64
+            runtime: osx-x64
+          # - os: windows-lates
+          #   rt: win-x64
     runs-on: ${{ matrix.os }}
     steps:
       - name: checkout
@@ -24,10 +24,13 @@ jobs:
         with:
           dotnet-version: 3.1.x
 
+      - name: log
+        run: "echo os: ${{ matrix.os }}, runtime: ${{ matrix.runtime }}"
+
       - name: publish
-        run: dotnet publish -c Release -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained true -r ${{ matrix.rt }}
-      - name: upload
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ matrix.rt }}
-          path: bin/Release/netcoreapp3.1/${{ matrix.rt }}/publish/sql2csv
+        run: dotnet publish -c Release -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained true -r ${{ matrix.runtime }}
+      # - name: upload
+      #   uses: actions/upload-artifact@v2
+      #   with:
+      #     name: ${{ matrix.rt }}
+      #     path: bin/Release/netcoreapp3.1/${{ matrix.rt }}/publish/sql2csv
