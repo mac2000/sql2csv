@@ -14,9 +14,27 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: 3.1.x
-      - name: linux-x64
+
+      - name: publish linux-x64
         run: dotnet publish -c Release -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained true -r linux-x64
-      - name: osx-x64
+      - name: upload linux-x64
+        uses: actions/upload-artifact@v2
+        with:
+          name: linux-x64
+          path: bin/Release/netcoreapp3.1/linux-x64/publish/sql2csv
+
+      - name: publish osx-x64
         run: dotnet publish -c Release -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained true -r osx-x64
-      - name: win-x64
+      - name: upload osx-x64
+        uses: actions/upload-artifact@v2
+        with:
+          name: osx-x64
+          path: bin/Release/netcoreapp3.1/osx-x64/publish/sql2csv
+
+      - name: publish win-x64
         run: dotnet publish -c Release -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained true -r win-x64
+      - name: upload win-x64
+        uses: actions/upload-artifact@v2
+        with:
+          name: win-x64.exe
+          path: bin/Release/netcoreapp3.1/win-x64/publish/sql2csv.exe
