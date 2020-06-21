@@ -18,10 +18,10 @@ bq load --replace=true db.notebookemployee notebookemployee.csv "NotebookID:INTE
 - Output file is UTF-8 without BOM
 - Newlines are `\n`
 
-## Usage example:
+## Usage example
 
-```
-sql2csv.exe --query="SELECT * FROM NotebookEmployee with (nolock)" --output=notebookemployee.csv --password=secret123
+```bash
+sql2csv --query="SELECT * FROM NotebookEmployee with (nolock)" --output=notebookemployee.csv --password=secret123
 ```
 
 ## Required options
@@ -37,7 +37,7 @@ sql2csv.exe --query="SELECT * FROM NotebookEmployee with (nolock)" --output=note
 `--username=sa` - username
 `--password=secret123` - password
 
-# Build
+## Build
 
 ```bash
 dotnet publish -c Release -r osx-x64
@@ -45,11 +45,11 @@ dotnet publish -c Release -r win-x64
 dotnet publish -c Release -r linux-x64
 ```
 
-# Performance
+## Performance
 
 **bcp**
 
-```
+```bash
 bcp "SELECT ID, VacancyApplyID, QUOTENAME(convert(varchar, AddDate, 120), '\"'), QUOTENAME(FileName, '\"'), CheckSum, FileSize FROM VacancyApplyCVs with (nolock)" queryout "vacancyapplycvs.csv" -c -C65001 -t"," -r"\n"
 2382128 rows copied.
 Network packet size (bytes): 4096
@@ -58,7 +58,7 @@ Clock Time (ms.) Total     : 5600   Average : (425380.00 rows per sec.)
 
 **sql2csv**
 
-```
+```bash
 sql2csv.exe --query="SELECT ID, VacancyApplyID, convert(varchar, AddDate, 120), FileName, CheckSum, FileSize FROM VacancyApplyCVs with (nolock)" --output=vacancyapplycvs.csv
 2->382->135 read in 00:00:06.9164592
 2->382->135 process in 00:00:11.5524886
