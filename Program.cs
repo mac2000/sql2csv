@@ -36,7 +36,6 @@ namespace sql2csv
             if (string.IsNullOrEmpty(query) || string.IsNullOrEmpty(output) || string.IsNullOrEmpty(connectionString))
             {
                 Console.Write("Reason: ");
-
                 if (string.IsNullOrEmpty(query))
                 {
                     Console.WriteLine("query is empty");
