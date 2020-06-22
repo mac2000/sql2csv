@@ -32,9 +32,25 @@ namespace sql2csv
             output = "demo.csv";
             connectionString = "Data Source=beta.rabota.ua;Initial Catalog=RabotaUA2;Integrated Security=False;User ID=sa;Password=rabota;";
 #endif
-            
+
             if (string.IsNullOrEmpty(query) || string.IsNullOrEmpty(output) || string.IsNullOrEmpty(connectionString))
             {
+                Console.Write("Reason: ");
+
+                if (string.IsNullOrEmpty(query))
+                {
+                    Console.WriteLine("query is empty");
+                }
+                if (string.IsNullOrEmpty(output))
+                {
+                    Console.WriteLine("output is empty");
+                }
+                if (string.IsNullOrEmpty(connectionString))
+                {
+                    Console.WriteLine("connectionString is empty");
+                }
+                Console.WriteLine();
+
                 PrintHelpMessage();
                 return 1;
             }
