@@ -1,38 +1,38 @@
-name: CI
+name: main
 
-on: push
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - name: git clone
-        uses: actions/checkout@master
-      - name: lint
-        uses: docker://github/super-linter:v2.1.1
   build:
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
-            runtime: linux-x64
-            artifact: sql2csv
-          - os: macos-latest
-            runtime: osx-x64
-            artifact: sql2csv
-          - os: windows-latest
-            runtime: win-x64
-            artifact: sql2csv.exe
-    runs-on: ${{ matrix.os }}
+          - os: windows
+            arch: amd64
+            output: sql2csv_windows_amd64.exe
+          - os: linux
+            arch: amd64
+            output: sql2csv_linux_amd64.exe
+          - os: darwin
+            arch: amd64
+            output: sql2csv_darwin_amd64.exe
+          - os: darwin
+            arch: arm64
+            output: sql2csv_darwin_arm64.exe
     steps:
-      - name: git clone
-        uses: actions/checkout@master
-      - name: dotnet install
-        uses: actions/setup-dotnet@v1
-      - name: dotnet publish
-        run: dotnet publish -c Release -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained true -r ${{ matrix.runtime }}
-      - name: upload
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ matrix.runtime }}
-          path: bin/Release/netcoreapp3.1/${{ matrix.runtime }}/publish/${{ matrix.artifact }}
+      - uses: actions/checkout@v2
+      - name: go build -o ${{ matrix.output }}
+        env:
+          GOOS: ${{ matrix.os }}
+          GOARCH: ${{ matrix.arch }}
+      - run: ls -la
+      # - name: upload
+      #   uses: actions/upload-artifact@v2
+      #   with:
+      #     name: ${{ matrix.runtime }}
+      #     path: bin/Release/netcoreapp3.1/${{ matrix.runtime }}/publish/${{ matrix.artifact }}
