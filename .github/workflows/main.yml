@@ -29,6 +29,11 @@ jobs:
         run: docker run -d --name=db -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=P@ssword" -p 1433:1433 mcr.microsoft.com/mssql/server:2019-latest
       - name: wait
         run: timeout 60 sh -c 'until nc -z $0 $1; do sleep 1; done' localhost 1433
+      - name: check version
+        run: docker exec db /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P P@ssword -Q "SELECT @@VERSION"
+      - name: docker logs
+        if: always()
+        run: docker logs db
       - name: create database
         run: docker exec db /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P P@ssword -Q "create database demo"
       - name: create table
