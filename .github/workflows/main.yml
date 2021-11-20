@@ -8,28 +8,32 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
-          - os: windows
-            arch: amd64
+          - os: windows-latest
+            goos: windows
+            goarch: amd64
             output: sql2csv_windows_amd64.exe
-          - os: linux
-            arch: amd64
-            output: sql2csv_linux_amd64.exe
-          - os: darwin
-            arch: amd64
-            output: sql2csv_darwin_amd64.exe
-          - os: darwin
+          - os: ubuntu-latest
+            goos: linux
+            goarch: amd64
+            output: sql2csv_linux_amd64
+          - os: macos-latest
+            goos: darwin
+            goarch: amd64
+            output: sql2csv_darwin_amd64
+          - os: macos-latest
+            goos: darwin
             arch: arm64
-            output: sql2csv_darwin_arm64.exe
+            output: sql2csv_darwin_arm64
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
       - run: go build -o ${{ matrix.output }}
         env:
-          GOOS: ${{ matrix.os }}
-          GOARCH: ${{ matrix.arch }}
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
       - run: ls -la
       # - name: upload
       #   uses: actions/upload-artifact@v2
