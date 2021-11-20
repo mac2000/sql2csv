@@ -21,7 +21,44 @@ on:
     - LICENSE
     - README.md
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: docker run sqlserver
+        run: docker run -d --name=db -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=P@ssword" -p 1433:1433 mcr.microsoft.com/mssql/server:2019-latest
+      - name: wait
+        run: timeout 60 sh -c 'until nc -z $0 $1; do sleep 1; done' localhost 1433
+      - name: create database
+        run: docker exec -it db /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P P@ssword -Q "create database demo"
+      - name: create table
+        run: docker exec -it db /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P P@ssword -d demo -Q "create table inventory (id int, name nvarchar(50), quantity int)"
+      - name: insert into table
+        run: docker exec -it db /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P P@ssword -d demo -Q "insert into inventory values (1, 'banana', 150); insert into inventory values (2, 'orange', 154)"
+      - name: query table
+        run: docker exec -it db /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P P@ssword -d demo -Q "select * from inventory"
+      - name: actual
+        run: go run . -s localhost -u sa -p P@ssword -d demo -q 'select * from inventory' -o actual.csv --headers --lf -v
+      - name: expected
+        run: |
+          tee expected.csv > /dev/null <<EOT
+          "id","name","quantity"
+          "1","banana","150"
+          "2","orange","154"
+          EOT
+      - run: cat expected.csv
+      - run: cat actual.csv
+      - name: test
+        run: |
+          if cmp -s "actual.csv" "expected.csv"
+          then
+              echo 'Files are equal'
+          else
+              echo 'Files are different'
+              exit 1
+          fi
   build:
+    needs: [ test ]
     strategy:
       matrix:
         include:
