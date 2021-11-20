@@ -1,0 +1,29 @@
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: 'weekly'
+      day: 'friday'
+      time: '12:00'
+      timezone: 'Europe/Kiev'
+    reviewers:
+      - mac2000
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: 'weekly'
+      day: 'friday'
+      time: '12:00'
+      timezone: 'Europe/Kiev'
+    reviewers:
+      - mac2000
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: 'weekly'
+      day: 'friday'
+      time: '12:00'
+      timezone: 'Europe/Kiev'
+    reviewers:
+      - mac2000

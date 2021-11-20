@@ -1,11 +1,25 @@
 name: main
-
 on:
   push:
-    branches: [ master ]
+    branches:
+    - master
+    paths-ignore:
+    - .github/CODEOWNERS
+    - .github/dependabot.yml
+    - .gitattributes
+    - .gitignore
+    - LICENSE
+    - README.md
   pull_request:
-    branches: [ master ]
-
+    branches:
+    - master
+    paths-ignore:
+    - .github/CODEOWNERS
+    - .github/dependabot.yml
+    - .gitattributes
+    - .gitignore
+    - LICENSE
+    - README.md
 jobs:
   build:
     strategy:
@@ -34,9 +48,8 @@ jobs:
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
-      - run: ls -la
-      # - name: upload
-      #   uses: actions/upload-artifact@v2
-      #   with:
-      #     name: ${{ matrix.runtime }}
-      #     path: bin/Release/netcoreapp3.1/${{ matrix.runtime }}/publish/${{ matrix.artifact }}
+      - name: upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.output }}
+          path: ${{ matrix.output }}
