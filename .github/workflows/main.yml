@@ -30,13 +30,13 @@ jobs:
       - name: wait
         run: timeout 60 sh -c 'until nc -z $0 $1; do sleep 1; done' localhost 1433
       - name: create database
-        run: docker exec -it db /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P P@ssword -Q "create database demo"
+        run: docker exec db /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P P@ssword -Q "create database demo"
       - name: create table
-        run: docker exec -it db /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P P@ssword -d demo -Q "create table inventory (id int, name nvarchar(50), quantity int)"
+        run: docker exec db /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P P@ssword -d demo -Q "create table inventory (id int, name nvarchar(50), quantity int)"
       - name: insert into table
-        run: docker exec -it db /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P P@ssword -d demo -Q "insert into inventory values (1, 'banana', 150); insert into inventory values (2, 'orange', 154)"
+        run: docker exec db /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P P@ssword -d demo -Q "insert into inventory values (1, 'banana', 150); insert into inventory values (2, 'orange', 154)"
       - name: query table
-        run: docker exec -it db /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P P@ssword -d demo -Q "select * from inventory"
+        run: docker exec db /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P P@ssword -d demo -Q "select * from inventory"
       - name: actual
         run: go run . -s localhost -u sa -p P@ssword -d demo -q 'select * from inventory' -o actual.csv --headers --lf -v
       - name: expected
