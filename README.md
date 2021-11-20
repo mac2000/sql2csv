@@ -7,47 +7,57 @@ You gonna need it only if you are going to export big amounts of data. Otherwise
 This tool is used in conjunction with `bq load` to import data into BigQuery, e.g.:
 
 ```bash
-sql2csv --query="SELECT NotebookID, Name, Surname, convert(varchar, AddDate, 120), HeadquarterCityID AS CityID FROM NotebookEmployee with (nolock)" --output=notebookemployee.csv
+sql2csv -s localhost -u sa -p P@ssword -q "SELECT NotebookID, Name, Surname, convert(varchar, AddDate, 120), HeadquarterCityID AS CityID FROM NotebookEmployee with (nolock)" -o notebookemployee.csv -v
 bq load --replace=true db.notebookemployee notebookemployee.csv "NotebookID:INTEGER,Name:STRING,Surname:STRING,AddDate:DATETIME,CityID:INTEGER"
 ```
 
+> If you have long query, save it to a file and pass as `--input` parameter
+
 ## CSV
 
-- All fields are surrounded with double quotes
-- Quotes inside fields are escaped following to RFC with two doublequotes
-- Output file is UTF-8 without BOM
-- Newlines are `\n`
+CSV tries to be as close as possible to RFC 4180
+
+https://en.wikipedia.org/wiki/Comma-separated_values#RFC_4180_standard
+
+- Encoding is UTF-8
+- MS-DOS-style lines that end with (CR/LF) characters.
+- Optional header.
+- Each record contain the same number of comma-separated fields.
+- All field quoted with doublequote.
+- Double quotes escaped by doublequotes.
+- Non printable characters removed.
+- New lines replaced with space.
 
 ## Usage example
 
 ```bash
-sql2csv --query="SELECT * FROM NotebookEmployee with (nolock)" --output=notebookemployee.csv --password=secret123
+sql2csv -s localhost -u sa -p 123 -d blog -q "select id, name from posts" -o posts.csv
+
+sql2csv -s localhost -u sa -p 123 -d blog -i posts.sql -o posts.csv
+
+sql2csv -s localhost -u sa -p 123 -d blog -i posts.sql -o posts.csv --header -lf --verbose
 ```
 
 ## Required options
 
-`--query="select 1"` or `--input=query.sql` - provide query you wish to export
-
-`--output=data.csv` - file to save results to
+- `--query="select 1"` or `--input=query.sql` - provide query you wish to export
+- `--output=data.csv` - file to save results to
+- `--server=localhost` - servername to connect to
+- `--database=RabotaUA2` - database to run query against
+- `--username=sa` - username
+- `--password=secret123` - password
 
 ## Optional
 
-`--server=localhost` - servername to connect to
-`--database=RabotaUA2` - database to run query against
-`--username=sa` - username
-`--password=secret123` - password
+- `--verbose` - verbose output
+- `--headers` - add headers line
+- `--lf` - use `\n` instead of `\r\n`
 
 ## Build
 
 ```bash
-dotnet publish -c Release -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained true -r osx-x64
-
-dotnet publish -c Release -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained true -r win-x64
-
-dotnet publish -c Release -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained true -r linux-x64
+go build
 ```
-
-Note: `PublishReadyToRun` is available only when you building project on a target platform
 
 ## Performance
 
