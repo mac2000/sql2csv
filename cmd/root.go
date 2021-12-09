@@ -22,6 +22,8 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"database/sql"
 	"errors"
@@ -33,6 +35,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"unicode"
 
 	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/spf13/cobra"
@@ -61,7 +64,7 @@ var Output string
 var ConnectionString string
 var Con *sql.DB
 var Ctx context.Context
-var Csv *os.File
+var Csv *bufio.Writer
 var Start time.Time
 
 // rootCmd represents the base command when called without any subcommands
@@ -159,7 +162,7 @@ sql2csv -s localhost -u sa -p 123 -d blog -i posts.sql -o posts.csv --header -lf
 		if err != nil {
 			return err
 		}
-		Csv = f
+		Csv = bufio.NewWriterSize(f, 10*1024*1024)
 		if Verbose {
 			fmt.Printf("Opened \"%v\" file\n", Output)
 		}
@@ -198,7 +201,7 @@ sql2csv -s localhost -u sa -p 123 -d blog -i posts.sql -o posts.csv --header -lf
 						log.Fatal("Error writing delimiter to file: ", err.Error())
 					}
 				}
-				if _, err = Csv.WriteString(fmt.Sprintf("\"%s\"", sanitize(name))); err != nil {
+				if _, err = Csv.WriteString(fmt.Sprintf("\"%s\"", name)); err != nil {
 					log.Fatal("Error writing column name to file: ", err.Error())
 				}
 			}
@@ -231,12 +234,12 @@ sql2csv -s localhost -u sa -p 123 -d blog -i posts.sql -o posts.csv --header -lf
 				}
 				if bytes, ok := cell.(*[]byte); ok {
 					// Quote all cellss
-					if _, err = Csv.WriteString(fmt.Sprintf("\"%s\"", sanitize(string(*bytes)))); err != nil {
+					if _, err = Csv.WriteString(fmt.Sprintf("\"%s\"", san(*bytes))); err != nil {
 						log.Fatal("Error writing string to file: ", err.Error())
 					}
 					// Quote only string cells
 					// if isString[i] {
-					// 	if _, err = f.WriteString(fmt.Sprintf("\"%s\"", sanitize(string(*bytes)))); err != nil {
+					// 	if _, err = f.WriteString(fmt.Sprintf("\"%s\"", san(*bytes))); err != nil {
 					// 		log.Fatal("Error writing string to file: ", err.Error())
 					// 	}
 					// } else {
@@ -264,7 +267,7 @@ sql2csv -s localhost -u sa -p 123 -d blog -i posts.sql -o posts.csv --header -lf
 		if err != nil {
 			log.Println(err.Error())
 		}
-		err = Csv.Close()
+		err = Csv.Flush()
 		if err != nil {
 			log.Println(err.Error())
 		}
@@ -311,6 +314,22 @@ func init() {
 	rootCmd.MarkFlagRequired("output")
 }
 
-func sanitize(input string) string {
-	return strings.Replace(Spaces.ReplaceAllString(Bad.ReplaceAllString(input, ""), " "), "\"", "\"\"", -1)
+func san(input []byte) []byte {
+	return bytes.Trim(bytes.ReplaceAll(
+		bytes.ReplaceAll(
+			bytes.Map(func(r rune) rune {
+				if unicode.IsGraphic(r) {
+					return r
+				}
+				if unicode.IsSpace(r) {
+					return rune(' ')
+				}
+				return rune(' ')
+			}, bytes.ToValidUTF8(input, nil)),
+			[]byte("\u00A0"), []byte(" ")),
+		[]byte("\""), []byte("\"\"")), " ")
 }
+
+// func sanitize(input string) string {
+// 	return strings.Replace(Spaces.ReplaceAllString(Bad.ReplaceAllString(input, ""), " "), "\"", "\"\"", -1)
+// }
