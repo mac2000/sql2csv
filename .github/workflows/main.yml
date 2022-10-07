@@ -24,7 +24,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3.1.0
       - name: docker run sqlserver
         run: docker run -d --name=db -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=P@ssword" -p 1433:1433 mcr.microsoft.com/mssql/server:2019-latest
       - name: wait
@@ -85,7 +85,7 @@ jobs:
             output: sql2csv_darwin_arm64
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3.1.0
       - run: go build -o ${{ matrix.output }}
         env:
           GOOS: ${{ matrix.goos }}
